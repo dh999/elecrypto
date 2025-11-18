@@ -53,6 +53,19 @@ Elecrypto is a high-performance, cross-platform cryptographic library designed t
 - FN-DSA (Falcon512/1024) - Compact signatures
 - SLH-DSA (SPHINCS+) - Stateless hash-based signatures
 
+## Language Bindings Status
+
+| Language | Status | Location |
+|----------|--------|----------|
+| Python | ✅ Complete | `bindings/python/` |
+| Node.js/TypeScript | ✅ Complete | `bindings/nodejs/` |
+| Go | ✅ Complete | `bindings/go/` |
+| Java/Android | ✅ Complete | `bindings/java/` |
+| iOS/macOS (Swift) | ✅ Complete | `bindings/ios/` |
+| C | ✅ Complete | `bindings/c/` |
+
+All bindings tested and working with core functionality.
+
 ## Quick Start
 
 ### Korean Post-Quantum Cryptography (KPQC)
