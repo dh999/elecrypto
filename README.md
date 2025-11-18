@@ -55,6 +55,26 @@ Elecrypto is a high-performance, cross-platform cryptographic library designed t
 
 ## Quick Start
 
+### Korean Post-Quantum Cryptography (KPQC)
+
+**KEM (Key Encapsulation):**
+- NTRU+ - NTRU 기반, 빠른 성능 ⏳
+- SMAUG - 한국 독자 개발, 메모리 효율적 ⏳
+- TiGER - 격자 기반, 고속 연산 ⏳
+- PALOMA - 동형암호 친화적 ⏳
+
+**Digital Signatures:**
+- AIMer - 대수적 기법, 작은 서명 ⏳
+- HAETAE - 격자 기반, Dilithium 개선형 ⏳
+- SOLMAE (MQ-Sign) - 다변수 기반, 빠른 서명 ⏳
+- GCKSign - 그룹 서명 지원 ⏳
+
+⏳ = API 정의 완료, 구현 예정 (Rust 크레이트 대기 중)
+
+**NIST-KPQC 공통 알고리즘:**
+- Kyber, Dilithium, Falcon, SPHINCS+ (✅ 이미 구현됨)
+
+
 ### Python
 
 ```python

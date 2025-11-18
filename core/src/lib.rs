@@ -9,7 +9,8 @@
 //! - **Hash Functions**: SHA-256/512, SHA-3, BLAKE3
 //! - **Key Derivation**: PBKDF2, Argon2, HKDF
 //! - **Digital Signatures**: Ed25519, ECDSA, RSA-PSS
-//! - **Post-Quantum Crypto**: ML-KEM (Kyber), ML-DSA (Dilithium), FN-DSA (Falcon), SLH-DSA (SPHINCS+)
+//! - **Post-Quantum Crypto (NIST)**: ML-KEM (Kyber), ML-DSA (Dilithium), FN-DSA (Falcon), SLH-DSA (SPHINCS+)
+//! - **Post-Quantum Crypto (KPQC)**: NTRU+, SMAUG, TiGER, PALOMA, AIMer, HAETAE, SOLMAE, GCKSign
 //! - **Random Generation**: CSPRNG
 //!
 //! ## Safety
@@ -45,6 +46,7 @@ pub mod kdf;
 pub mod signing;
 pub mod random;
 pub mod pqc;
+pub mod kpqc;
 pub mod ffi;
 
 mod error;

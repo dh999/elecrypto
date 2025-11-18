@@ -33,6 +33,14 @@ Elecrypto API
 │   ├── Ed25519
 │   ├── ECDSA
 │   └── RSA-PSS
+├── Post-Quantum Crypto (NIST)
+│   ├── ML-KEM (Kyber)
+│   ├── ML-DSA (Dilithium)
+│   ├── FN-DSA (Falcon)
+│   └── SLH-DSA (SPHINCS+)
+├── Post-Quantum Crypto (KPQC)
+│   ├── KEM: NTRU+, SMAUG, TiGER, PALOMA
+│   └── Signatures: AIMer, HAETAE, SOLMAE, GCKSign
 └── Random
     └── CSPRNG
 ```
@@ -649,6 +657,424 @@ Input:
 Output:
   - valid: boolean
 Errors:
+  - InvalidPublicKey
+  - InvalidSignature
+```
+
+---
+
+## 8. Korean Post-Quantum Cryptography (KPQC)
+
+### Overview
+
+Korean post-quantum cryptographic algorithms standardized by KISA (Korea Internet & Security Agency) and NSR (National Security Research Institute).
+
+**Status**: API defined, implementations pending stable Rust crates.
+
+**KPQC Standards:**
+- NTRU+, SMAUG, TiGER, PALOMA: Key Encapsulation Mechanisms
+- AIMer, HAETAE, SOLMAE, GCKSign: Digital Signature Algorithms
+
+### 8.1 NTRU+ - Key Encapsulation (NTRU-based)
+
+#### 8.1.1 Generate NTRU+ Keypair
+
+```
+Function: ntruplus_keypair
+Input: (none)
+Output:
+  - public_key: bytes
+  - secret_key: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - KeyGenerationFailed
+```
+
+**Features:**
+- Fast performance
+- Based on NTRU lattice problems
+- Optimized for Korean standards
+
+#### 8.1.2 Encapsulate (Create Shared Secret)
+
+```
+Function: ntruplus_encapsulate
+Input:
+  - public_key: bytes
+Output:
+  - ciphertext: bytes
+  - shared_secret: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPublicKey
+  - EncryptionFailed
+```
+
+#### 8.1.3 Decapsulate (Recover Shared Secret)
+
+```
+Function: ntruplus_decapsulate
+Input:
+  - ciphertext: bytes
+  - secret_key: bytes
+Output:
+  - shared_secret: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPrivateKey
+  - DecryptionFailed
+```
+
+### 8.2 SMAUG - Key Encapsulation (Korean Indigenous)
+
+#### 8.2.1 Generate SMAUG Keypair
+
+```
+Function: smaug_keypair
+Input: (none)
+Output:
+  - public_key: bytes
+  - secret_key: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - KeyGenerationFailed
+```
+
+**Features:**
+- Memory efficient design
+- Korean indigenous development
+- Optimized for resource-constrained environments
+
+#### 8.2.2 Encapsulate
+
+```
+Function: smaug_encapsulate
+Input:
+  - public_key: bytes
+Output:
+  - ciphertext: bytes
+  - shared_secret: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPublicKey
+  - EncryptionFailed
+```
+
+#### 8.2.3 Decapsulate
+
+```
+Function: smaug_decapsulate
+Input:
+  - ciphertext: bytes
+  - secret_key: bytes
+Output:
+  - shared_secret: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPrivateKey
+  - DecryptionFailed
+```
+
+### 8.3 TiGER - Key Encapsulation (High-Performance Lattice)
+
+#### 8.3.1 Generate TiGER Keypair
+
+```
+Function: tiger_keypair
+Input: (none)
+Output:
+  - public_key: bytes
+  - secret_key: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - KeyGenerationFailed
+```
+
+**Features:**
+- Lattice-based design
+- High-speed operations
+- Optimized for modern processors
+
+#### 8.3.2 Encapsulate
+
+```
+Function: tiger_encapsulate
+Input:
+  - public_key: bytes
+Output:
+  - ciphertext: bytes
+  - shared_secret: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPublicKey
+  - EncryptionFailed
+```
+
+#### 8.3.3 Decapsulate
+
+```
+Function: tiger_decapsulate
+Input:
+  - ciphertext: bytes
+  - secret_key: bytes
+Output:
+  - shared_secret: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPrivateKey
+  - DecryptionFailed
+```
+
+### 8.4 PALOMA - Key Encapsulation (FHE-Friendly)
+
+#### 8.4.1 Generate PALOMA Keypair
+
+```
+Function: paloma_keypair
+Input: (none)
+Output:
+  - public_key: bytes
+  - secret_key: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - KeyGenerationFailed
+```
+
+**Features:**
+- Homomorphic encryption friendly
+- Designed for privacy-preserving applications
+- Supports advanced cryptographic protocols
+
+#### 8.4.2 Encapsulate
+
+```
+Function: paloma_encapsulate
+Input:
+  - public_key: bytes
+Output:
+  - ciphertext: bytes
+  - shared_secret: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPublicKey
+  - EncryptionFailed
+```
+
+#### 8.4.3 Decapsulate
+
+```
+Function: paloma_decapsulate
+Input:
+  - ciphertext: bytes
+  - secret_key: bytes
+Output:
+  - shared_secret: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPrivateKey
+  - DecryptionFailed
+```
+
+### 8.5 AIMer - Digital Signatures (Algebraic)
+
+#### 8.5.1 Generate AIMer Keypair
+
+```
+Function: aimer_keypair
+Input: (none)
+Output:
+  - public_key: bytes
+  - secret_key: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - KeyGenerationFailed
+```
+
+**Features:**
+- Algebraic techniques
+- Compact signature size
+- Fast verification
+
+#### 8.5.2 Sign Message
+
+```
+Function: aimer_sign
+Input:
+  - message: bytes
+  - secret_key: bytes
+Output:
+  - signature: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPrivateKey
+  - SigningFailed
+```
+
+#### 8.5.3 Verify Signature
+
+```
+Function: aimer_verify
+Input:
+  - message: bytes
+  - signature: bytes
+  - public_key: bytes
+Output:
+  - valid: boolean
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPublicKey
+  - InvalidSignature
+```
+
+### 8.6 HAETAE - Digital Signatures (Dilithium Variant)
+
+#### 8.6.1 Generate HAETAE Keypair
+
+```
+Function: haetae_keypair
+Input: (none)
+Output:
+  - public_key: bytes
+  - secret_key: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - KeyGenerationFailed
+```
+
+**Features:**
+- Lattice-based design
+- Improved variant of Dilithium
+- Enhanced performance characteristics
+
+#### 8.6.2 Sign Message
+
+```
+Function: haetae_sign
+Input:
+  - message: bytes
+  - secret_key: bytes
+Output:
+  - signature: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPrivateKey
+  - SigningFailed
+```
+
+#### 8.6.3 Verify Signature
+
+```
+Function: haetae_verify
+Input:
+  - message: bytes
+  - signature: bytes
+  - public_key: bytes
+Output:
+  - valid: boolean
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPublicKey
+  - InvalidSignature
+```
+
+### 8.7 SOLMAE (MQ-Sign) - Digital Signatures (Multivariate)
+
+#### 8.7.1 Generate SOLMAE Keypair
+
+```
+Function: solmae_keypair
+Input: (none)
+Output:
+  - public_key: bytes
+  - secret_key: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - KeyGenerationFailed
+```
+
+**Features:**
+- Multivariate quadratic equations
+- Fast signing operations
+- Compact implementation
+
+#### 8.7.2 Sign Message
+
+```
+Function: solmae_sign
+Input:
+  - message: bytes
+  - secret_key: bytes
+Output:
+  - signature: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPrivateKey
+  - SigningFailed
+```
+
+#### 8.7.3 Verify Signature
+
+```
+Function: solmae_verify
+Input:
+  - message: bytes
+  - signature: bytes
+  - public_key: bytes
+Output:
+  - valid: boolean
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPublicKey
+  - InvalidSignature
+```
+
+### 8.8 GCKSign - Digital Signatures (Group Signatures)
+
+#### 8.8.1 Generate GCKSign Keypair
+
+```
+Function: gcksign_keypair
+Input: (none)
+Output:
+  - public_key: bytes
+  - secret_key: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - KeyGenerationFailed
+```
+
+**Features:**
+- Group signature support
+- Privacy-preserving signatures
+- Advanced cryptographic protocols
+
+#### 8.8.2 Sign Message
+
+```
+Function: gcksign_sign
+Input:
+  - message: bytes
+  - secret_key: bytes
+Output:
+  - signature: bytes
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
+  - InvalidPrivateKey
+  - SigningFailed
+```
+
+#### 8.8.3 Verify Signature
+
+```
+Function: gcksign_verify
+Input:
+  - message: bytes
+  - signature: bytes
+  - public_key: bytes
+Output:
+  - valid: boolean
+Errors:
+  - UnsupportedAlgorithm (pending implementation)
   - InvalidPublicKey
   - InvalidSignature
 ```

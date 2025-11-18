@@ -172,6 +172,23 @@ elecrypto/
 - **SLH-DSA (SPHINCS+)**: Stateless hash-based signatures
   - SPHINCS+-SHAKE-128f (Level 1), SPHINCS+-SHAKE-256f (Level 5)
 
+
+### Korean Post-Quantum Cryptography (KPQC)
+
+**KEM (Key Encapsulation):**
+- **NTRU+**: NTRU 기반, 빠른 성능 (⏳ 구현 예정)
+- **SMAUG**: 한국 독자 개발, 메모리 효율적 (⏳ 구현 예정)
+- **TiGER**: 격자 기반, 고속 연산 (⏳ 구현 예정)
+- **PALOMA**: 동형암호 친화적 (⏳ 구현 예정)
+
+**Digital Signatures:**
+- **AIMer**: 대수적 기법, 작은 서명 (⏳ 구현 예정)
+- **HAETAE**: 격자 기반, Dilithium 개선형 (⏳ 구현 예정)
+- **SOLMAE (MQ-Sign)**: 다변수 기반, 빠른 서명 (⏳ 구현 예정)
+- **GCKSign**: 그룹 서명 지원 (⏳ 구현 예정)
+
+**Note**: KPQC 알고리즘은 API가 정의되었으며, Rust 크레이트 안정화 후 구현 예정입니다.
+
 ### Random Number Generation
 - **CSPRNG** (Cryptographically Secure Pseudo-Random Number Generator)
 - Platform-specific entropy sources
