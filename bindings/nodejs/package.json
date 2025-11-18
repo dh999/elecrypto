@@ -1,0 +1,35 @@
+{
+  "name": "elecrypto",
+  "version": "0.1.0",
+  "description": "Cross-platform cryptographic library with post-quantum support",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node examples/example-basic.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cryptography",
+    "encryption",
+    "aes",
+    "chacha20",
+    "ed25519",
+    "post-quantum",
+    "security"
+  ],
+  "author": "Elecrypto Contributors",
+  "license": "MIT",
+  "dependencies": {
+    "ffi-napi": "^4.0.3",
+    "ref-napi": "^3.0.3",
+    "ref-array-napi": "^1.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
