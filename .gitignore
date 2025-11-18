@@ -1,0 +1,55 @@
+# Rust
+target/
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+
+# C bindings
+bindings/c/*.h
+bindings/c/*.so
+bindings/c/*.dylib
+bindings/c/*.dll
+
+# Node.js
+node_modules/
+*.node
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Java
+*.class
+*.jar
+
+# Go
+*.test
+*.out
+
+# iOS
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Android
+.gradle/
+local.properties
+*.apk
