@@ -12,6 +12,7 @@
 //! - **Post-Quantum Crypto (NIST)**: ML-KEM (Kyber), ML-DSA (Dilithium), FN-DSA (Falcon), SLH-DSA (SPHINCS+)
 //! - **Post-Quantum Crypto (KPQC)**: NTRU+, SMAUG, TiGER, PALOMA, AIMer, HAETAE, SOLMAE, GCKSign
 //! - **Random Generation**: CSPRNG
+//! - **DRBG**: HMAC-DRBG, Hash-DRBG, CTR-DRBG (NIST SP 800-90A)
 //!
 //! ## Safety
 //!
@@ -45,6 +46,7 @@ pub mod hash;
 pub mod kdf;
 pub mod signing;
 pub mod random;
+pub mod drbg;
 pub mod pqc;
 pub mod kpqc;
 pub mod ffi;

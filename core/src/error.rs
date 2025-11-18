@@ -46,6 +46,18 @@ pub enum Error {
     #[error("Key generation failed: {0}")]
     KeyGenerationFailed(String),
 
+    /// Key derivation failed
+    #[error("Key derivation failed: {0}")]
+    KeyDerivationFailed(String),
+
+    /// Encoding failed
+    #[error("Encoding failed: {0}")]
+    EncodingFailed(String),
+
+    /// Decoding failed
+    #[error("Decoding failed: {0}")]
+    DecodingFailed(String),
+
     /// Signing operation failed
     #[error("Signing failed: {0}")]
     SigningFailed(String),
@@ -108,6 +120,9 @@ impl Error {
             Error::EncryptionFailed(_) => -5,
             Error::DecryptionFailed(_) => -6,
             Error::KeyGenerationFailed(_) => -7,
+            Error::KeyDerivationFailed(_) => -17,
+            Error::EncodingFailed(_) => -18,
+            Error::DecodingFailed(_) => -19,
             Error::SigningFailed(_) => -8,
             Error::VerificationFailed(_) => -9,
             Error::InvalidPublicKey(_) => -10,
@@ -141,6 +156,9 @@ mod tests {
             Error::EncryptionFailed("test".into()),
             Error::DecryptionFailed("test".into()),
             Error::KeyGenerationFailed("test".into()),
+            Error::KeyDerivationFailed("test".into()),
+            Error::EncodingFailed("test".into()),
+            Error::DecodingFailed("test".into()),
             Error::SigningFailed("test".into()),
             Error::VerificationFailed("test".into()),
             Error::InvalidPublicKey("test".into()),

@@ -193,13 +193,10 @@ pub fn aes_gcm_decrypt(
     // Decrypt
     let plaintext = cipher
         .decrypt(nonce_array, payload)
-        .map_err(|e| {
-            // Authentication failure is the most common error
-            if e.to_string().contains("verification") || e.to_string().contains("tag") {
-                Error::AuthenticationFailed
-            } else {
-                Error::DecryptionFailed(format!("Decryption failed: {}", e))
-            }
+        .map_err(|_e| {
+            // For AES-GCM, any decryption error is an authentication failure
+            // since it's an authenticated encryption scheme
+            Error::AuthenticationFailed
         })?;
 
     Ok(Zeroizing::new(plaintext))

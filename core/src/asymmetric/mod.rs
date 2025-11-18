@@ -1,58 +1,49 @@
 //! Asymmetric encryption
 //!
 //! Provides public-key encryption:
-//! - RSA-OAEP
-//! - ECIES (planned)
-//!
-//! **Note**: This module is under development.
-//! Initial implementation provides placeholder functions.
+//! - RSA-OAEP (RSA with Optimal Asymmetric Encryption Padding)
+//! - ECIES (Elliptic Curve Integrated Encryption Scheme)
 
-use crate::{Error, Result};
+pub mod rsa_oaep;
+pub mod ecies;
 
-/// RSA key sizes
-pub enum RsaKeySize {
-    /// 2048-bit RSA key
-    Rsa2048 = 2048,
-    /// 3072-bit RSA key
-    Rsa3072 = 3072,
-    /// 4096-bit RSA key
-    Rsa4096 = 4096,
-}
+pub use rsa_oaep::{
+    RsaKeySize, RsaPublicKey, RsaPrivateKey,
+    rsa_generate_keypair, rsa_encrypt, rsa_decrypt,
+    rsa_public_key_to_der, rsa_private_key_to_der,
+    rsa_public_key_from_der, rsa_private_key_from_der,
+};
 
-/// Placeholder: Generate RSA key pair
-///
-/// **Status**: Implementation pending
-pub fn rsa_generate_keypair(_key_size: RsaKeySize) -> Result<(Vec<u8>, Vec<u8>)> {
-    Err(Error::UnsupportedAlgorithm(
-        "RSA key generation not yet implemented".to_string(),
-    ))
-}
-
-/// Placeholder: RSA-OAEP encryption
-///
-/// **Status**: Implementation pending
-pub fn rsa_encrypt(_plaintext: &[u8], _public_key: &[u8]) -> Result<Vec<u8>> {
-    Err(Error::UnsupportedAlgorithm(
-        "RSA encryption not yet implemented".to_string(),
-    ))
-}
-
-/// Placeholder: RSA-OAEP decryption
-///
-/// **Status**: Implementation pending
-pub fn rsa_decrypt(_ciphertext: &[u8], _private_key: &[u8]) -> Result<Vec<u8>> {
-    Err(Error::UnsupportedAlgorithm(
-        "RSA decryption not yet implemented".to_string(),
-    ))
-}
+pub use ecies::{
+    EciesPublicKey, EciesPrivateKey,
+    ecies_generate_keypair, ecies_encrypt, ecies_decrypt,
+    ecies_public_key_to_bytes, ecies_private_key_to_bytes,
+    ecies_public_key_from_bytes, ecies_private_key_from_bytes,
+};
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_rsa_not_implemented() {
-        let result = rsa_generate_keypair(RsaKeySize::Rsa2048);
-        assert!(matches!(result, Err(Error::UnsupportedAlgorithm(_))));
+    fn test_rsa_roundtrip() {
+        let (public_key, private_key) = rsa_generate_keypair(RsaKeySize::Rsa2048).unwrap();
+        let plaintext = b"Hello, RSA-OAEP!";
+
+        let ciphertext = rsa_encrypt(plaintext, &public_key).unwrap();
+        let decrypted = rsa_decrypt(&ciphertext, &private_key).unwrap();
+
+        assert_eq!(plaintext.as_slice(), decrypted.as_slice());
+    }
+
+    #[test]
+    fn test_ecies_roundtrip() {
+        let (public_key, private_key) = ecies_generate_keypair().unwrap();
+        let plaintext = b"Hello, ECIES!";
+
+        let ciphertext = ecies_encrypt(plaintext, &public_key).unwrap();
+        let decrypted = ecies_decrypt(&ciphertext, &private_key).unwrap();
+
+        assert_eq!(plaintext.as_slice(), decrypted.as_slice());
     }
 }
