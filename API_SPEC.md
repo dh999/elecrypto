@@ -447,6 +447,213 @@ Errors:
 ```
 
 ---
+## 7. Post-Quantum Cryptography (PQC)
+
+### Overview
+
+Post-quantum cryptographic algorithms standardized by NIST to resist quantum computer attacks.
+
+**NIST Standard Names:**
+- ML-KEM (Kyber): Module-Lattice-Based Key-Encapsulation Mechanism
+- ML-DSA (Dilithium): Module-Lattice-Based Digital Signature Algorithm
+- FN-DSA (Falcon): Fast Fourier Transform over NTRU-Lattice Digital Signature Algorithm
+- SLH-DSA (SPHINCS+): Stateless Hash-Based Digital Signature Algorithm
+
+### 7.1 ML-KEM (Kyber) - Key Encapsulation
+
+#### 7.1.1 Generate Kyber Keypair
+
+```
+Function: kyber512_keypair / kyber768_keypair / kyber1024_keypair
+Input: (none)
+Output:
+  - public_key: bytes (Kyber512: 800, Kyber768: 1184, Kyber1024: 1568)
+  - secret_key: bytes (Kyber512: 1632, Kyber768: 2400, Kyber1024: 3168)
+Errors:
+  - KeyGenerationFailed
+```
+
+**Security Levels:**
+- Kyber512: NIST Level 1 (~AES-128)
+- Kyber768: NIST Level 3 (~AES-192) - **Recommended**
+- Kyber1024: NIST Level 5 (~AES-256)
+
+#### 7.1.2 Encapsulate (Create Shared Secret)
+
+```
+Function: kyber512_encapsulate / kyber768_encapsulate / kyber1024_encapsulate
+Input:
+  - public_key: bytes
+Output:
+  - ciphertext: bytes (Kyber512: 768, Kyber768: 1088, Kyber1024: 1568)
+  - shared_secret: bytes (32 bytes for all variants)
+Errors:
+  - InvalidPublicKey
+  - EncryptionFailed
+```
+
+#### 7.1.3 Decapsulate (Recover Shared Secret)
+
+```
+Function: kyber512_decapsulate / kyber768_decapsulate / kyber1024_decapsulate
+Input:
+  - ciphertext: bytes
+  - secret_key: bytes
+Output:
+  - shared_secret: bytes (32 bytes)
+Errors:
+  - InvalidPrivateKey
+  - InvalidInput
+  - DecryptionFailed
+```
+
+### 7.2 ML-DSA (Dilithium) - Digital Signatures
+
+#### 7.2.1 Generate Dilithium Keypair
+
+```
+Function: dilithium2_keypair / dilithium3_keypair / dilithium5_keypair
+Input: (none)
+Output:
+  - public_key: bytes (Dilithium2: 1312, Dilithium3: 1952, Dilithium5: 2592)
+  - secret_key: bytes (Dilithium2: 2528, Dilithium3: 4000, Dilithium5: 4864)
+Errors:
+  - KeyGenerationFailed
+```
+
+**Security Levels:**
+- Dilithium2: NIST Level 2 (~AES-128)
+- Dilithium3: NIST Level 3 (~AES-192) - **Recommended**
+- Dilithium5: NIST Level 5 (~AES-256)
+
+#### 7.2.2 Sign Message
+
+```
+Function: dilithium2_sign / dilithium3_sign / dilithium5_sign
+Input:
+  - message: bytes
+  - secret_key: bytes
+Output:
+  - signature: bytes (includes message + signature)
+Errors:
+  - InvalidPrivateKey
+  - SigningFailed
+```
+
+#### 7.2.3 Verify Signature
+
+```
+Function: dilithium2_verify / dilithium3_verify / dilithium5_verify
+Input:
+  - message: bytes
+  - signature: bytes
+  - public_key: bytes
+Output:
+  - valid: boolean
+Errors:
+  - InvalidPublicKey
+  - InvalidSignature
+```
+
+### 7.3 FN-DSA (Falcon) - Compact Signatures
+
+#### 7.3.1 Generate Falcon Keypair
+
+```
+Function: falcon512_keypair / falcon1024_keypair
+Input: (none)
+Output:
+  - public_key: bytes (Falcon512: 897, Falcon1024: 1793)
+  - secret_key: bytes (Falcon512: 1281, Falcon1024: 2305)
+Errors:
+  - KeyGenerationFailed
+```
+
+**Features:**
+- **Smallest signatures** among NIST PQC algorithms
+- Fast verification
+- Falcon512: NIST Level 1
+- Falcon1024: NIST Level 5
+
+#### 7.3.2 Sign Message
+
+```
+Function: falcon512_sign / falcon1024_sign
+Input:
+  - message: bytes
+  - secret_key: bytes
+Output:
+  - signature: bytes (compact size!)
+Errors:
+  - InvalidPrivateKey
+  - SigningFailed
+```
+
+#### 7.3.3 Verify Signature
+
+```
+Function: falcon512_verify / falcon1024_verify
+Input:
+  - message: bytes
+  - signature: bytes
+  - public_key: bytes
+Output:
+  - valid: boolean
+Errors:
+  - InvalidPublicKey
+  - InvalidSignature
+```
+
+### 7.4 SLH-DSA (SPHINCS+) - Hash-Based Signatures
+
+#### 7.4.1 Generate SPHINCS+ Keypair
+
+```
+Function: sphincsplus_shake_128f_keypair / sphincsplus_shake_256f_keypair
+Input: (none)
+Output:
+  - public_key: bytes
+  - secret_key: bytes
+Errors:
+  - KeyGenerationFailed
+```
+
+**Features:**
+- **Stateless** (no state to manage)
+- Based only on hash functions (conservative security)
+- SHAKE-128f: NIST Level 1, fast variant
+- SHAKE-256f: NIST Level 5, fast variant
+
+#### 7.4.2 Sign Message
+
+```
+Function: sphincsplus_shake_128f_sign / sphincsplus_shake_256f_sign
+Input:
+  - message: bytes
+  - secret_key: bytes
+Output:
+  - signature: bytes
+Errors:
+  - InvalidPrivateKey
+  - SigningFailed
+```
+
+#### 7.4.3 Verify Signature
+
+```
+Function: sphincsplus_shake_128f_verify / sphincsplus_shake_256f_verify
+Input:
+  - message: bytes
+  - signature: bytes
+  - public_key: bytes
+Output:
+  - valid: boolean
+Errors:
+  - InvalidPublicKey
+  - InvalidSignature
+```
+
+---
 
 ## Error Handling
 

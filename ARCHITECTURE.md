@@ -161,6 +161,17 @@ elecrypto/
 - **ECDSA** (P-256, P-384)
 - **RSA-PSS** (2048, 3072, 4096-bit)
 
+
+### Post-Quantum Cryptography (NIST Standards)
+- **ML-KEM (Kyber)**: Quantum-resistant key encapsulation
+  - Kyber512 (Level 1), Kyber768 (Level 3), Kyber1024 (Level 5)
+- **ML-DSA (Dilithium)**: Lattice-based digital signatures
+  - Dilithium2 (Level 2), Dilithium3 (Level 3), Dilithium5 (Level 5)
+- **FN-DSA (Falcon)**: Compact quantum-resistant signatures
+  - Falcon512 (Level 1), Falcon1024 (Level 5)
+- **SLH-DSA (SPHINCS+)**: Stateless hash-based signatures
+  - SPHINCS+-SHAKE-128f (Level 1), SPHINCS+-SHAKE-256f (Level 5)
+
 ### Random Number Generation
 - **CSPRNG** (Cryptographically Secure Pseudo-Random Number Generator)
 - Platform-specific entropy sources

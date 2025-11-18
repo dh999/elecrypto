@@ -42,6 +42,17 @@ Elecrypto is a high-performance, cross-platform cryptographic library designed t
 ### Random Number Generation
 - CSPRNG (Platform-native entropy)
 
+
+### Post-Quantum Cryptography (NIST Standards)
+
+**Key Encapsulation:**
+- ML-KEM (Kyber512/768/1024) - Quantum-resistant key exchange
+
+**Digital Signatures:**
+- ML-DSA (Dilithium2/3/5) - Lattice-based signatures
+- FN-DSA (Falcon512/1024) - Compact signatures
+- SLH-DSA (SPHINCS+) - Stateless hash-based signatures
+
 ## Quick Start
 
 ### Python

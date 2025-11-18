@@ -36,6 +36,13 @@ p256 = { version = "0.13", features = ["ecdsa"] }
 p384 = { version = "0.13", features = ["ecdsa"] }
 ed25519-dalek = "2.1"
 
+# Post-Quantum Cryptography (NIST standards)
+pqc_kyber = "0.7"  # ML-KEM (Kyber) - Key Encapsulation Mechanism
+pqcrypto-dilithium = "0.5"  # ML-DSA (Dilithium) - Digital Signature
+pqcrypto-falcon = "0.3"  # FN-DSA (Falcon) - Digital Signature
+pqcrypto-sphincsplus = "0.6"  # SLH-DSA (SPHINCS+) - Stateless Hash-Based Signature
+pqcrypto-traits = "0.3"  # Common traits for PQC algorithms
+
 # Random number generation
 rand = "0.8"
 getrandom = "0.2"
