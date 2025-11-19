@@ -30,6 +30,25 @@ public class Elecrypto {
     public static final int ED25519_SECRET_KEY_SIZE = 32;
     public static final int ED25519_SIGNATURE_SIZE = 64;
 
+    // RSA constants
+    public static final int RSA2048_PUBLIC_KEY_SIZE = 294;
+    public static final int RSA2048_PRIVATE_KEY_SIZE = 1218;
+
+    // ECIES constants
+    public static final int ECIES_PUBLIC_KEY_SIZE = 65;
+    public static final int ECIES_PRIVATE_KEY_SIZE = 32;
+
+    // Kyber constants
+    public static final int KYBER512_PUBLIC_KEY_SIZE = 800;
+    public static final int KYBER512_SECRET_KEY_SIZE = 1632;
+    public static final int KYBER512_CIPHERTEXT_SIZE = 768;
+    public static final int KYBER512_SHARED_SECRET_SIZE = 32;
+
+    // Dilithium constants
+    public static final int DILITHIUM2_PUBLIC_KEY_SIZE = 1312;
+    public static final int DILITHIUM2_SECRET_KEY_SIZE = 2560;
+    public static final int DILITHIUM2_SIGNATURE_SIZE = 2420;
+
     // Native methods
     private static native int nativeRandomBytes(byte[] output, int length);
     private static native int nativeSha256(byte[] input, int inputLen, byte[] output);
@@ -42,6 +61,40 @@ public class Elecrypto {
     private static native int nativeEd25519Sign(byte[] message, int messageLen,
         byte[] secretKey, byte[] signature);
     private static native int nativeEd25519Verify(byte[] message, int messageLen,
+        byte[] signature, byte[] publicKey);
+
+    // RSA native methods
+    private static native int nativeRsaGenerateKeypair2048(byte[] publicKey, byte[] privateKey);
+    private static native int nativeRsaEncrypt(byte[] plaintext, int plaintextLen,
+        byte[] publicKey, int publicKeyLen, byte[] ciphertext, int[] ciphertextLen);
+    private static native int nativeRsaDecrypt(byte[] ciphertext, int ciphertextLen,
+        byte[] privateKey, int privateKeyLen, byte[] plaintext, int[] plaintextLen);
+
+    // ECIES native methods
+    private static native int nativeEciesGenerateKeypair(byte[] publicKey, byte[] privateKey);
+    private static native int nativeEciesEncrypt(byte[] plaintext, int plaintextLen,
+        byte[] publicKey, byte[] ciphertext, int[] ciphertextLen);
+    private static native int nativeEciesDecrypt(byte[] ciphertext, int ciphertextLen,
+        byte[] privateKey, byte[] plaintext, int[] plaintextLen);
+
+    // DRBG native methods
+    private static native int nativeHmacDrbgGenerate(byte[] seed, int seedLen,
+        byte[] output, int outputLen);
+    private static native int nativeCtrDrbgGenerate(byte[] seed, int seedLen,
+        byte[] output, int outputLen);
+
+    // Kyber native methods
+    private static native int nativeKyber512GenerateKeypair(byte[] publicKey, byte[] secretKey);
+    private static native int nativeKyber512Encapsulate(byte[] publicKey,
+        byte[] ciphertext, byte[] sharedSecret);
+    private static native int nativeKyber512Decapsulate(byte[] ciphertext,
+        byte[] secretKey, byte[] sharedSecret);
+
+    // Dilithium native methods
+    private static native int nativeDilithium2GenerateKeypair(byte[] publicKey, byte[] secretKey);
+    private static native int nativeDilithium2Sign(byte[] message, int messageLen,
+        byte[] secretKey, byte[] signature);
+    private static native int nativeDilithium2Verify(byte[] message, int messageLen,
         byte[] signature, byte[] publicKey);
 
     /**
@@ -179,6 +232,301 @@ public class Elecrypto {
         public final byte[] secretKey;
 
         public Ed25519Keypair(byte[] publicKey, byte[] secretKey) {
+            this.publicKey = publicKey;
+            this.secretKey = secretKey;
+        }
+    }
+
+    // RSA-OAEP Methods
+
+    /**
+     * Generate RSA-2048 keypair
+     */
+    public static RsaKeypair rsaGenerateKeypair() throws ElecryptoException {
+        byte[] publicKey = new byte[RSA2048_PUBLIC_KEY_SIZE];
+        byte[] privateKey = new byte[RSA2048_PRIVATE_KEY_SIZE];
+
+        int result = nativeRsaGenerateKeypair2048(publicKey, privateKey);
+        if (result < 0) {
+            throw new ElecryptoException(result, "RSA keypair generation failed");
+        }
+
+        return new RsaKeypair(publicKey, privateKey);
+    }
+
+    /**
+     * Encrypt with RSA-OAEP
+     */
+    public static byte[] rsaEncrypt(byte[] plaintext, byte[] publicKey) throws ElecryptoException {
+        byte[] ciphertext = new byte[256];
+        int[] ciphertextLen = new int[1];
+
+        int result = nativeRsaEncrypt(plaintext, plaintext.length,
+            publicKey, publicKey.length, ciphertext, ciphertextLen);
+        if (result < 0) {
+            throw new ElecryptoException(result, "RSA encryption failed");
+        }
+
+        byte[] output = new byte[ciphertextLen[0]];
+        System.arraycopy(ciphertext, 0, output, 0, ciphertextLen[0]);
+        return output;
+    }
+
+    /**
+     * Decrypt with RSA-OAEP
+     */
+    public static byte[] rsaDecrypt(byte[] ciphertext, byte[] privateKey) throws ElecryptoException {
+        byte[] plaintext = new byte[256];
+        int[] plaintextLen = new int[1];
+
+        int result = nativeRsaDecrypt(ciphertext, ciphertext.length,
+            privateKey, privateKey.length, plaintext, plaintextLen);
+        if (result < 0) {
+            throw new ElecryptoException(result, "RSA decryption failed");
+        }
+
+        byte[] output = new byte[plaintextLen[0]];
+        System.arraycopy(plaintext, 0, output, 0, plaintextLen[0]);
+        return output;
+    }
+
+    // ECIES Methods
+
+    /**
+     * Generate ECIES keypair
+     */
+    public static EciesKeypair eciesGenerateKeypair() throws ElecryptoException {
+        byte[] publicKey = new byte[ECIES_PUBLIC_KEY_SIZE];
+        byte[] privateKey = new byte[ECIES_PRIVATE_KEY_SIZE];
+
+        int result = nativeEciesGenerateKeypair(publicKey, privateKey);
+        if (result < 0) {
+            throw new ElecryptoException(result, "ECIES keypair generation failed");
+        }
+
+        return new EciesKeypair(publicKey, privateKey);
+    }
+
+    /**
+     * Encrypt with ECIES
+     */
+    public static byte[] eciesEncrypt(byte[] plaintext, byte[] publicKey) throws ElecryptoException {
+        int maxLen = 65 + 12 + plaintext.length + 16;
+        byte[] ciphertext = new byte[maxLen];
+        int[] ciphertextLen = new int[1];
+
+        int result = nativeEciesEncrypt(plaintext, plaintext.length,
+            publicKey, ciphertext, ciphertextLen);
+        if (result < 0) {
+            throw new ElecryptoException(result, "ECIES encryption failed");
+        }
+
+        byte[] output = new byte[ciphertextLen[0]];
+        System.arraycopy(ciphertext, 0, output, 0, ciphertextLen[0]);
+        return output;
+    }
+
+    /**
+     * Decrypt with ECIES
+     */
+    public static byte[] eciesDecrypt(byte[] ciphertext, byte[] privateKey) throws ElecryptoException {
+        int maxLen = ciphertext.length - 65 - 12 - 16;
+        if (maxLen < 1) maxLen = 1;
+        byte[] plaintext = new byte[maxLen];
+        int[] plaintextLen = new int[1];
+
+        int result = nativeEciesDecrypt(ciphertext, ciphertext.length,
+            privateKey, plaintext, plaintextLen);
+        if (result < 0) {
+            throw new ElecryptoException(result, "ECIES decryption failed");
+        }
+
+        byte[] output = new byte[plaintextLen[0]];
+        System.arraycopy(plaintext, 0, output, 0, plaintextLen[0]);
+        return output;
+    }
+
+    // DRBG Methods
+
+    /**
+     * Generate random bytes using HMAC-DRBG
+     */
+    public static byte[] hmacDrbgGenerate(byte[] seed, int outputLen) throws ElecryptoException {
+        byte[] output = new byte[outputLen];
+
+        int result = nativeHmacDrbgGenerate(seed, seed.length, output, outputLen);
+        if (result < 0) {
+            throw new ElecryptoException(result, "HMAC-DRBG generation failed");
+        }
+
+        return output;
+    }
+
+    /**
+     * Generate random bytes using CTR-DRBG
+     */
+    public static byte[] ctrDrbgGenerate(byte[] seed, int outputLen) throws ElecryptoException {
+        byte[] output = new byte[outputLen];
+
+        int result = nativeCtrDrbgGenerate(seed, seed.length, output, outputLen);
+        if (result < 0) {
+            throw new ElecryptoException(result, "CTR-DRBG generation failed");
+        }
+
+        return output;
+    }
+
+    // Kyber Methods
+
+    /**
+     * Generate Kyber-512 keypair
+     */
+    public static Kyber512Keypair kyber512GenerateKeypair() throws ElecryptoException {
+        byte[] publicKey = new byte[KYBER512_PUBLIC_KEY_SIZE];
+        byte[] secretKey = new byte[KYBER512_SECRET_KEY_SIZE];
+
+        int result = nativeKyber512GenerateKeypair(publicKey, secretKey);
+        if (result < 0) {
+            throw new ElecryptoException(result, "Kyber keypair generation failed");
+        }
+
+        return new Kyber512Keypair(publicKey, secretKey);
+    }
+
+    /**
+     * Encapsulate shared secret with Kyber-512
+     */
+    public static Kyber512EncapsulationResult kyber512Encapsulate(byte[] publicKey) throws ElecryptoException {
+        byte[] ciphertext = new byte[KYBER512_CIPHERTEXT_SIZE];
+        byte[] sharedSecret = new byte[KYBER512_SHARED_SECRET_SIZE];
+
+        int result = nativeKyber512Encapsulate(publicKey, ciphertext, sharedSecret);
+        if (result < 0) {
+            throw new ElecryptoException(result, "Kyber encapsulation failed");
+        }
+
+        return new Kyber512EncapsulationResult(ciphertext, sharedSecret);
+    }
+
+    /**
+     * Decapsulate shared secret with Kyber-512
+     */
+    public static byte[] kyber512Decapsulate(byte[] ciphertext, byte[] secretKey) throws ElecryptoException {
+        byte[] sharedSecret = new byte[KYBER512_SHARED_SECRET_SIZE];
+
+        int result = nativeKyber512Decapsulate(ciphertext, secretKey, sharedSecret);
+        if (result < 0) {
+            throw new ElecryptoException(result, "Kyber decapsulation failed");
+        }
+
+        return sharedSecret;
+    }
+
+    // Dilithium Methods
+
+    /**
+     * Generate Dilithium2 keypair
+     */
+    public static Dilithium2Keypair dilithium2GenerateKeypair() throws ElecryptoException {
+        byte[] publicKey = new byte[DILITHIUM2_PUBLIC_KEY_SIZE];
+        byte[] secretKey = new byte[DILITHIUM2_SECRET_KEY_SIZE];
+
+        int result = nativeDilithium2GenerateKeypair(publicKey, secretKey);
+        if (result < 0) {
+            throw new ElecryptoException(result, "Dilithium keypair generation failed");
+        }
+
+        return new Dilithium2Keypair(publicKey, secretKey);
+    }
+
+    /**
+     * Sign with Dilithium2
+     */
+    public static byte[] dilithium2Sign(byte[] message, byte[] secretKey) throws ElecryptoException {
+        byte[] signature = new byte[DILITHIUM2_SIGNATURE_SIZE];
+
+        int result = nativeDilithium2Sign(message, message.length, secretKey, signature);
+        if (result < 0) {
+            throw new ElecryptoException(result, "Dilithium signing failed");
+        }
+
+        return signature;
+    }
+
+    /**
+     * Verify Dilithium2 signature
+     */
+    public static boolean dilithium2Verify(byte[] message, byte[] signature, byte[] publicKey) throws ElecryptoException {
+        int result = nativeDilithium2Verify(message, message.length, signature, publicKey);
+        if (result < 0) {
+            throw new ElecryptoException(result, "Dilithium verification failed");
+        }
+
+        return true;
+    }
+
+    // Additional result classes
+
+    /**
+     * RSA keypair
+     */
+    public static class RsaKeypair {
+        public final byte[] publicKey;
+        public final byte[] privateKey;
+
+        public RsaKeypair(byte[] publicKey, byte[] privateKey) {
+            this.publicKey = publicKey;
+            this.privateKey = privateKey;
+        }
+    }
+
+    /**
+     * ECIES keypair
+     */
+    public static class EciesKeypair {
+        public final byte[] publicKey;
+        public final byte[] privateKey;
+
+        public EciesKeypair(byte[] publicKey, byte[] privateKey) {
+            this.publicKey = publicKey;
+            this.privateKey = privateKey;
+        }
+    }
+
+    /**
+     * Kyber-512 keypair
+     */
+    public static class Kyber512Keypair {
+        public final byte[] publicKey;
+        public final byte[] secretKey;
+
+        public Kyber512Keypair(byte[] publicKey, byte[] secretKey) {
+            this.publicKey = publicKey;
+            this.secretKey = secretKey;
+        }
+    }
+
+    /**
+     * Kyber-512 encapsulation result
+     */
+    public static class Kyber512EncapsulationResult {
+        public final byte[] ciphertext;
+        public final byte[] sharedSecret;
+
+        public Kyber512EncapsulationResult(byte[] ciphertext, byte[] sharedSecret) {
+            this.ciphertext = ciphertext;
+            this.sharedSecret = sharedSecret;
+        }
+    }
+
+    /**
+     * Dilithium2 keypair
+     */
+    public static class Dilithium2Keypair {
+        public final byte[] publicKey;
+        public final byte[] secretKey;
+
+        public Dilithium2Keypair(byte[] publicKey, byte[] secretKey) {
             this.publicKey = publicKey;
             this.secretKey = secretKey;
         }

@@ -43,3 +43,34 @@ export {
   hkdf,
   Argon2idResult
 } from './kdf';
+
+// Asymmetric encryption
+export {
+  rsaGenerateKeypair,
+  rsaEncrypt,
+  rsaDecrypt,
+  eciesGenerateKeypair,
+  eciesEncrypt,
+  eciesDecrypt,
+  RsaKeypair,
+  EciesKeypair
+} from './asymmetric';
+
+// DRBG
+export {
+  hmacDrbgGenerate,
+  ctrDrbgGenerate
+} from './drbg';
+
+// Post-Quantum Cryptography
+export {
+  kyber512GenerateKeypair,
+  kyber512Encapsulate,
+  kyber512Decapsulate,
+  dilithium2GenerateKeypair,
+  dilithium2Sign,
+  dilithium2Verify,
+  Kyber512Keypair,
+  Kyber512EncapsulationResult,
+  Dilithium2Keypair
+} from './pqc';

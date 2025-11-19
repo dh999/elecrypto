@@ -23,6 +23,23 @@ from .signing import (
     ed25519_verify,
 )
 from .kdf import pbkdf2, argon2id, hkdf
+from .asymmetric import (
+    rsa_generate_keypair,
+    rsa_encrypt,
+    rsa_decrypt,
+    ecies_generate_keypair,
+    ecies_encrypt,
+    ecies_decrypt,
+)
+from .drbg import hmac_drbg_generate, ctr_drbg_generate
+from .pqc import (
+    kyber512_generate_keypair,
+    kyber512_encapsulate,
+    kyber512_decapsulate,
+    dilithium2_generate_keypair,
+    dilithium2_sign,
+    dilithium2_verify,
+)
 
 __all__ = [
     'ElecryptoError',
@@ -48,4 +65,21 @@ __all__ = [
     'pbkdf2',
     'argon2id',
     'hkdf',
+    # Asymmetric encryption
+    'rsa_generate_keypair',
+    'rsa_encrypt',
+    'rsa_decrypt',
+    'ecies_generate_keypair',
+    'ecies_encrypt',
+    'ecies_decrypt',
+    # DRBG
+    'hmac_drbg_generate',
+    'ctr_drbg_generate',
+    # Post-Quantum Cryptography
+    'kyber512_generate_keypair',
+    'kyber512_encapsulate',
+    'kyber512_decapsulate',
+    'dilithium2_generate_keypair',
+    'dilithium2_sign',
+    'dilithium2_verify',
 ]

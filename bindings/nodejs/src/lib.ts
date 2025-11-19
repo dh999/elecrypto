@@ -33,6 +33,25 @@ export const ED25519_PUBLIC_KEY_SIZE = 32;
 export const ED25519_SECRET_KEY_SIZE = 32;
 export const ED25519_SIGNATURE_SIZE = 64;
 
+// RSA constants
+export const RSA2048_PUBLIC_KEY_SIZE = 294;
+export const RSA2048_PRIVATE_KEY_SIZE = 1218;
+
+// ECIES constants
+export const ECIES_PUBLIC_KEY_SIZE = 65;
+export const ECIES_PRIVATE_KEY_SIZE = 32;
+
+// Kyber constants
+export const KYBER512_PUBLIC_KEY_SIZE = 800;
+export const KYBER512_SECRET_KEY_SIZE = 1632;
+export const KYBER512_CIPHERTEXT_SIZE = 768;
+export const KYBER512_SHARED_SECRET_SIZE = 32;
+
+// Dilithium constants
+export const DILITHIUM2_PUBLIC_KEY_SIZE = 1312;
+export const DILITHIUM2_SECRET_KEY_SIZE = 2560;
+export const DILITHIUM2_SIGNATURE_SIZE = 2420;
+
 // Find the shared library
 function findLibrary(): string {
   const libName = process.platform === 'win32'
@@ -91,6 +110,30 @@ export const lib = ffi.Library(libPath, {
   'elecrypto_pbkdf2': ['int', [uint8Ptr, 'uint', uint8Ptr, 'uint', 'uint', uint8Ptr, 'uint']],
   'elecrypto_argon2id': ['int', [uint8Ptr, 'uint', uint8Ptr, 'uint', 'uint', 'uint', uint8Ptr, 'uint', uint8Ptr]],
   'elecrypto_hkdf': ['int', [uint8Ptr, 'uint', uint8Ptr, 'uint', uint8Ptr, 'uint', uint8Ptr, 'uint']],
+
+  // RSA-OAEP
+  'elecrypto_rsa_generate_keypair_2048': ['int', [uint8Ptr, uint8Ptr]],
+  'elecrypto_rsa_encrypt': ['int', [uint8Ptr, 'uint', uint8Ptr, 'uint', uint8Ptr, uint8Ptr]],
+  'elecrypto_rsa_decrypt': ['int', [uint8Ptr, 'uint', uint8Ptr, 'uint', uint8Ptr, uint8Ptr]],
+
+  // ECIES
+  'elecrypto_ecies_generate_keypair': ['int', [uint8Ptr, uint8Ptr]],
+  'elecrypto_ecies_encrypt': ['int', [uint8Ptr, 'uint', uint8Ptr, uint8Ptr, uint8Ptr]],
+  'elecrypto_ecies_decrypt': ['int', [uint8Ptr, 'uint', uint8Ptr, uint8Ptr, uint8Ptr]],
+
+  // DRBG
+  'elecrypto_hmac_drbg_generate': ['int', [uint8Ptr, 'uint', uint8Ptr, 'uint']],
+  'elecrypto_ctr_drbg_generate': ['int', [uint8Ptr, 'uint', uint8Ptr, 'uint']],
+
+  // Kyber
+  'elecrypto_kyber512_generate_keypair': ['int', [uint8Ptr, uint8Ptr]],
+  'elecrypto_kyber512_encapsulate': ['int', [uint8Ptr, uint8Ptr, uint8Ptr]],
+  'elecrypto_kyber512_decapsulate': ['int', [uint8Ptr, uint8Ptr, uint8Ptr]],
+
+  // Dilithium
+  'elecrypto_dilithium2_generate_keypair': ['int', [uint8Ptr, uint8Ptr]],
+  'elecrypto_dilithium2_sign': ['int', [uint8Ptr, 'uint', uint8Ptr, uint8Ptr]],
+  'elecrypto_dilithium2_verify': ['int', [uint8Ptr, 'uint', uint8Ptr, uint8Ptr]],
 });
 
 // Error class

@@ -36,6 +36,25 @@ const (
 	Ed25519PublicKeySize = 32
 	Ed25519SecretKeySize = 32
 	Ed25519SignatureSize = 64
+
+	// RSA constants
+	RSA2048PublicKeySize  = 294
+	RSA2048PrivateKeySize = 1218
+
+	// ECIES constants
+	ECIESPublicKeySize  = 65
+	ECIESPrivateKeySize = 32
+
+	// Kyber constants
+	Kyber512PublicKeySize    = 800
+	Kyber512SecretKeySize    = 1632
+	Kyber512CiphertextSize   = 768
+	Kyber512SharedSecretSize = 32
+
+	// Dilithium constants
+	Dilithium2PublicKeySize  = 1312
+	Dilithium2SecretKeySize  = 2560
+	Dilithium2SignatureSize  = 2420
 )
 
 // Error represents an Elecrypto error

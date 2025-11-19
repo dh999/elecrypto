@@ -64,6 +64,25 @@ ED25519_PUBLIC_KEY_SIZE = 32
 ED25519_SECRET_KEY_SIZE = 32
 ED25519_SIGNATURE_SIZE = 64
 
+# RSA constants
+RSA2048_PUBLIC_KEY_SIZE = 294
+RSA2048_PRIVATE_KEY_SIZE = 1218
+
+# ECIES constants
+ECIES_PUBLIC_KEY_SIZE = 65
+ECIES_PRIVATE_KEY_SIZE = 32
+
+# PQC Kyber constants
+KYBER512_PUBLIC_KEY_SIZE = 800
+KYBER512_SECRET_KEY_SIZE = 1632
+KYBER512_CIPHERTEXT_SIZE = 768
+KYBER512_SHARED_SECRET_SIZE = 32
+
+# PQC Dilithium constants
+DILITHIUM2_PUBLIC_KEY_SIZE = 1312
+DILITHIUM2_SECRET_KEY_SIZE = 2560
+DILITHIUM2_SIGNATURE_SIZE = 2420
+
 # Define function signatures
 
 # Random
@@ -168,6 +187,107 @@ lib.elecrypto_hkdf.argtypes = [
     POINTER(c_ubyte), c_uint,
 ]
 lib.elecrypto_hkdf.restype = c_int
+
+# RSA-OAEP
+lib.elecrypto_rsa_generate_keypair_2048.argtypes = [
+    POINTER(c_ubyte),  # public_key
+    POINTER(c_ubyte),  # private_key
+]
+lib.elecrypto_rsa_generate_keypair_2048.restype = c_int
+
+lib.elecrypto_rsa_encrypt.argtypes = [
+    POINTER(c_ubyte), c_uint,  # plaintext
+    POINTER(c_ubyte), c_uint,  # public_key
+    POINTER(c_ubyte),          # ciphertext
+    POINTER(c_uint),           # ciphertext_len
+]
+lib.elecrypto_rsa_encrypt.restype = c_int
+
+lib.elecrypto_rsa_decrypt.argtypes = [
+    POINTER(c_ubyte), c_uint,  # ciphertext
+    POINTER(c_ubyte), c_uint,  # private_key
+    POINTER(c_ubyte),          # plaintext
+    POINTER(c_uint),           # plaintext_len
+]
+lib.elecrypto_rsa_decrypt.restype = c_int
+
+# ECIES
+lib.elecrypto_ecies_generate_keypair.argtypes = [
+    POINTER(c_ubyte),  # public_key
+    POINTER(c_ubyte),  # private_key
+]
+lib.elecrypto_ecies_generate_keypair.restype = c_int
+
+lib.elecrypto_ecies_encrypt.argtypes = [
+    POINTER(c_ubyte), c_uint,  # plaintext
+    POINTER(c_ubyte),          # public_key
+    POINTER(c_ubyte),          # ciphertext
+    POINTER(c_uint),           # ciphertext_len
+]
+lib.elecrypto_ecies_encrypt.restype = c_int
+
+lib.elecrypto_ecies_decrypt.argtypes = [
+    POINTER(c_ubyte), c_uint,  # ciphertext
+    POINTER(c_ubyte),          # private_key
+    POINTER(c_ubyte),          # plaintext
+    POINTER(c_uint),           # plaintext_len
+]
+lib.elecrypto_ecies_decrypt.restype = c_int
+
+# DRBG
+lib.elecrypto_hmac_drbg_generate.argtypes = [
+    POINTER(c_ubyte), c_uint,  # seed
+    POINTER(c_ubyte), c_uint,  # output
+]
+lib.elecrypto_hmac_drbg_generate.restype = c_int
+
+lib.elecrypto_ctr_drbg_generate.argtypes = [
+    POINTER(c_ubyte), c_uint,  # seed
+    POINTER(c_ubyte), c_uint,  # output
+]
+lib.elecrypto_ctr_drbg_generate.restype = c_int
+
+# Kyber (KEM)
+lib.elecrypto_kyber512_generate_keypair.argtypes = [
+    POINTER(c_ubyte),  # public_key
+    POINTER(c_ubyte),  # secret_key
+]
+lib.elecrypto_kyber512_generate_keypair.restype = c_int
+
+lib.elecrypto_kyber512_encapsulate.argtypes = [
+    POINTER(c_ubyte),  # public_key
+    POINTER(c_ubyte),  # ciphertext
+    POINTER(c_ubyte),  # shared_secret
+]
+lib.elecrypto_kyber512_encapsulate.restype = c_int
+
+lib.elecrypto_kyber512_decapsulate.argtypes = [
+    POINTER(c_ubyte),  # ciphertext
+    POINTER(c_ubyte),  # secret_key
+    POINTER(c_ubyte),  # shared_secret
+]
+lib.elecrypto_kyber512_decapsulate.restype = c_int
+
+# Dilithium (Signature)
+lib.elecrypto_dilithium2_generate_keypair.argtypes = [
+    POINTER(c_ubyte),  # public_key
+    POINTER(c_ubyte),  # secret_key
+]
+lib.elecrypto_dilithium2_generate_keypair.restype = c_int
+
+lib.elecrypto_dilithium2_sign.argtypes = [
+    POINTER(c_ubyte), c_uint,  # message
+    POINTER(c_ubyte),          # secret_key
+    POINTER(c_ubyte),          # signature
+]
+lib.elecrypto_dilithium2_sign.restype = c_int
+
+lib.elecrypto_dilithium2_verify.argtypes = [
+    POINTER(c_ubyte), c_uint,  # message
+    POINTER(c_ubyte),          # signature
+    POINTER(c_ubyte),          # public_key
+]
+lib.elecrypto_dilithium2_verify.restype = c_int
 
 
 class ElecryptoError(Exception):
