@@ -18,6 +18,17 @@ use crate::symmetric::{aes_gcm_encrypt, aes_gcm_decrypt, aes_generate_key};
 use crate::symmetric::{chacha20_poly1305_encrypt, chacha20_poly1305_decrypt, chacha20_generate_key};
 use crate::signing::{ed25519_generate_keypair, ed25519_sign, ed25519_verify};
 use crate::kdf::{pbkdf2, argon2id, hkdf_derive};
+use crate::asymmetric::{
+    RsaKeySize, rsa_generate_keypair, rsa_encrypt, rsa_decrypt,
+    rsa_public_key_to_der, rsa_private_key_to_der,
+    rsa_public_key_from_der, rsa_private_key_from_der,
+    ecies_generate_keypair, ecies_encrypt, ecies_decrypt,
+    ecies_public_key_to_bytes, ecies_private_key_to_bytes,
+    ecies_public_key_from_bytes, ecies_private_key_from_bytes,
+};
+use crate::drbg::{Drbg, HmacDrbg, CtrDrbg};
+use crate::pqc::{kyber512_keypair, kyber512_encapsulate, kyber512_decapsulate};
+use crate::pqc::{dilithium2_keypair, dilithium2_sign, dilithium2_verify};
 
 /// Success return code
 pub const ELECRYPTO_SUCCESS: c_int = 0;
@@ -34,6 +45,35 @@ pub const ELECRYPTO_ERROR_VERIFICATION_FAILED: c_int = -8;
 pub const ELECRYPTO_ERROR_KEY_GENERATION_FAILED: c_int = -9;
 pub const ELECRYPTO_ERROR_INVALID_PUBLIC_KEY: c_int = -10;
 pub const ELECRYPTO_ERROR_INVALID_PRIVATE_KEY: c_int = -11;
+pub const ELECRYPTO_ERROR_KEY_DERIVATION_FAILED: c_int = -17;
+pub const ELECRYPTO_ERROR_ENCODING_FAILED: c_int = -18;
+pub const ELECRYPTO_ERROR_DECODING_FAILED: c_int = -19;
+
+/// RSA-2048 public key DER size (approximate max)
+pub const ELECRYPTO_RSA2048_PUBLIC_KEY_SIZE: c_uint = 294;
+/// RSA-2048 private key DER size (approximate max)
+pub const ELECRYPTO_RSA2048_PRIVATE_KEY_SIZE: c_uint = 1218;
+
+/// ECIES public key size (P-256 uncompressed point)
+pub const ELECRYPTO_ECIES_PUBLIC_KEY_SIZE: c_uint = 65;
+/// ECIES private key size (P-256 scalar)
+pub const ELECRYPTO_ECIES_PRIVATE_KEY_SIZE: c_uint = 32;
+
+/// Kyber512 public key size
+pub const ELECRYPTO_KYBER512_PUBLIC_KEY_SIZE: c_uint = 800;
+/// Kyber512 secret key size
+pub const ELECRYPTO_KYBER512_SECRET_KEY_SIZE: c_uint = 1632;
+/// Kyber512 ciphertext size
+pub const ELECRYPTO_KYBER512_CIPHERTEXT_SIZE: c_uint = 768;
+/// Kyber512 shared secret size
+pub const ELECRYPTO_KYBER512_SHARED_SECRET_SIZE: c_uint = 32;
+
+/// Dilithium2 public key size
+pub const ELECRYPTO_DILITHIUM2_PUBLIC_KEY_SIZE: c_uint = 1312;
+/// Dilithium2 secret key size
+pub const ELECRYPTO_DILITHIUM2_SECRET_KEY_SIZE: c_uint = 2560;
+/// Dilithium2 signature size
+pub const ELECRYPTO_DILITHIUM2_SIGNATURE_SIZE: c_uint = 2420;
 
 /// AES-256-GCM key size (32 bytes)
 pub const ELECRYPTO_AES_KEY_SIZE: c_uint = 32;
@@ -563,6 +603,464 @@ pub unsafe extern "C" fn elecrypto_hkdf(
             ELECRYPTO_SUCCESS
         }
         Err(_) => ELECRYPTO_ERROR_ENCRYPTION_FAILED,
+    }
+}
+
+// =============================================================================
+// RSA-OAEP Functions
+// =============================================================================
+
+/// Generate RSA-2048 keypair
+///
+/// # Safety
+///
+/// - `public_key` must point to valid memory of at least 294 bytes
+/// - `public_key_len` must point to valid memory
+/// - `private_key` must point to valid memory of at least 1218 bytes
+/// - `private_key_len` must point to valid memory
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_rsa_generate_keypair_2048(
+    public_key: *mut c_uchar,
+    public_key_len: *mut c_uint,
+    private_key: *mut c_uchar,
+    private_key_len: *mut c_uint,
+) -> c_int {
+    if public_key.is_null() || public_key_len.is_null() ||
+       private_key.is_null() || private_key_len.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    match rsa_generate_keypair(RsaKeySize::Rsa2048) {
+        Ok((pk, sk)) => {
+            match (rsa_public_key_to_der(&pk), rsa_private_key_to_der(&sk)) {
+                (Ok(pk_der), Ok(sk_der)) => {
+                    ptr::copy_nonoverlapping(pk_der.as_ptr(), public_key, pk_der.len());
+                    *public_key_len = pk_der.len() as c_uint;
+                    ptr::copy_nonoverlapping(sk_der.as_ptr(), private_key, sk_der.len());
+                    *private_key_len = sk_der.len() as c_uint;
+                    ELECRYPTO_SUCCESS
+                }
+                _ => ELECRYPTO_ERROR_ENCODING_FAILED,
+            }
+        }
+        Err(_) => ELECRYPTO_ERROR_KEY_GENERATION_FAILED,
+    }
+}
+
+/// Encrypt with RSA-OAEP
+///
+/// # Safety
+///
+/// - `plaintext` must point to valid memory of `plaintext_len` bytes
+/// - `public_key` must point to valid memory of `public_key_len` bytes (DER format)
+/// - `ciphertext` must point to valid memory of at least 256 bytes (for RSA-2048)
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_rsa_encrypt(
+    plaintext: *const c_uchar,
+    plaintext_len: c_uint,
+    public_key: *const c_uchar,
+    public_key_len: c_uint,
+    ciphertext: *mut c_uchar,
+) -> c_int {
+    if plaintext.is_null() || public_key.is_null() || ciphertext.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let plaintext_slice = slice::from_raw_parts(plaintext, plaintext_len as usize);
+    let pk_slice = slice::from_raw_parts(public_key, public_key_len as usize);
+
+    match rsa_public_key_from_der(pk_slice) {
+        Ok(pk) => {
+            match rsa_encrypt(plaintext_slice, &pk) {
+                Ok(ct) => {
+                    ptr::copy_nonoverlapping(ct.as_ptr(), ciphertext, ct.len());
+                    ct.len() as c_int
+                }
+                Err(_) => ELECRYPTO_ERROR_ENCRYPTION_FAILED,
+            }
+        }
+        Err(_) => ELECRYPTO_ERROR_INVALID_PUBLIC_KEY,
+    }
+}
+
+/// Decrypt with RSA-OAEP
+///
+/// # Safety
+///
+/// - `ciphertext` must point to valid memory of `ciphertext_len` bytes
+/// - `private_key` must point to valid memory of `private_key_len` bytes (DER format)
+/// - `plaintext` must point to valid memory of at least 256 bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_rsa_decrypt(
+    ciphertext: *const c_uchar,
+    ciphertext_len: c_uint,
+    private_key: *const c_uchar,
+    private_key_len: c_uint,
+    plaintext: *mut c_uchar,
+) -> c_int {
+    if ciphertext.is_null() || private_key.is_null() || plaintext.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let ct_slice = slice::from_raw_parts(ciphertext, ciphertext_len as usize);
+    let sk_slice = slice::from_raw_parts(private_key, private_key_len as usize);
+
+    match rsa_private_key_from_der(sk_slice) {
+        Ok(sk) => {
+            match rsa_decrypt(ct_slice, &sk) {
+                Ok(pt) => {
+                    ptr::copy_nonoverlapping(pt.as_ptr(), plaintext, pt.len());
+                    pt.len() as c_int
+                }
+                Err(_) => ELECRYPTO_ERROR_DECRYPTION_FAILED,
+            }
+        }
+        Err(_) => ELECRYPTO_ERROR_INVALID_PRIVATE_KEY,
+    }
+}
+
+// =============================================================================
+// ECIES Functions
+// =============================================================================
+
+/// Generate ECIES keypair (P-256)
+///
+/// # Safety
+///
+/// - `public_key` must point to valid memory of at least 65 bytes
+/// - `private_key` must point to valid memory of at least 32 bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_ecies_generate_keypair(
+    public_key: *mut c_uchar,
+    private_key: *mut c_uchar,
+) -> c_int {
+    if public_key.is_null() || private_key.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    match ecies_generate_keypair() {
+        Ok((pk, sk)) => {
+            let pk_bytes = ecies_public_key_to_bytes(&pk);
+            let sk_bytes = ecies_private_key_to_bytes(&sk);
+
+            ptr::copy_nonoverlapping(pk_bytes.as_ptr(), public_key, pk_bytes.len());
+            ptr::copy_nonoverlapping(sk_bytes.as_ptr(), private_key, sk_bytes.len());
+            ELECRYPTO_SUCCESS
+        }
+        Err(_) => ELECRYPTO_ERROR_KEY_GENERATION_FAILED,
+    }
+}
+
+/// Encrypt with ECIES
+///
+/// Returns ciphertext length (65 + plaintext_len + 16 + 12)
+///
+/// # Safety
+///
+/// - `plaintext` must point to valid memory of `plaintext_len` bytes
+/// - `public_key` must point to valid memory of 65 bytes
+/// - `ciphertext` must point to valid memory of at least `plaintext_len + 93` bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_ecies_encrypt(
+    plaintext: *const c_uchar,
+    plaintext_len: c_uint,
+    public_key: *const c_uchar,
+    ciphertext: *mut c_uchar,
+) -> c_int {
+    if plaintext.is_null() || public_key.is_null() || ciphertext.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let plaintext_slice = slice::from_raw_parts(plaintext, plaintext_len as usize);
+    let pk_slice = slice::from_raw_parts(public_key, 65);
+
+    match ecies_public_key_from_bytes(pk_slice) {
+        Ok(pk) => {
+            match ecies_encrypt(plaintext_slice, &pk) {
+                Ok(ct) => {
+                    ptr::copy_nonoverlapping(ct.as_ptr(), ciphertext, ct.len());
+                    ct.len() as c_int
+                }
+                Err(_) => ELECRYPTO_ERROR_ENCRYPTION_FAILED,
+            }
+        }
+        Err(_) => ELECRYPTO_ERROR_INVALID_PUBLIC_KEY,
+    }
+}
+
+/// Decrypt with ECIES
+///
+/// # Safety
+///
+/// - `ciphertext` must point to valid memory of `ciphertext_len` bytes
+/// - `private_key` must point to valid memory of 32 bytes
+/// - `plaintext` must point to valid memory of at least `ciphertext_len - 93` bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_ecies_decrypt(
+    ciphertext: *const c_uchar,
+    ciphertext_len: c_uint,
+    private_key: *const c_uchar,
+    plaintext: *mut c_uchar,
+) -> c_int {
+    if ciphertext.is_null() || private_key.is_null() || plaintext.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let ct_slice = slice::from_raw_parts(ciphertext, ciphertext_len as usize);
+    let sk_slice = slice::from_raw_parts(private_key, 32);
+
+    match ecies_private_key_from_bytes(sk_slice) {
+        Ok(sk) => {
+            match ecies_decrypt(ct_slice, &sk) {
+                Ok(pt) => {
+                    ptr::copy_nonoverlapping(pt.as_ptr(), plaintext, pt.len());
+                    pt.len() as c_int
+                }
+                Err(_) => ELECRYPTO_ERROR_DECRYPTION_FAILED,
+            }
+        }
+        Err(_) => ELECRYPTO_ERROR_INVALID_PRIVATE_KEY,
+    }
+}
+
+// =============================================================================
+// DRBG Functions (using opaque handles)
+// =============================================================================
+
+/// Create HMAC-DRBG instance
+///
+/// Returns handle (positive) or error (negative)
+///
+/// # Safety
+///
+/// - `entropy` must point to valid memory of at least 32 bytes
+/// - `nonce` must point to valid memory of at least 16 bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_hmac_drbg_generate(
+    entropy: *const c_uchar,
+    entropy_len: c_uint,
+    nonce: *const c_uchar,
+    nonce_len: c_uint,
+    output: *mut c_uchar,
+    output_len: c_uint,
+) -> c_int {
+    if entropy.is_null() || nonce.is_null() || output.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let entropy_slice = slice::from_raw_parts(entropy, entropy_len as usize);
+    let nonce_slice = slice::from_raw_parts(nonce, nonce_len as usize);
+
+    match HmacDrbg::instantiate(entropy_slice, nonce_slice, None) {
+        Ok(mut drbg) => {
+            let mut out_vec = vec![0u8; output_len as usize];
+            match drbg.generate(&mut out_vec, None) {
+                Ok(()) => {
+                    ptr::copy_nonoverlapping(out_vec.as_ptr(), output, output_len as usize);
+                    ELECRYPTO_SUCCESS
+                }
+                Err(_) => ELECRYPTO_ERROR_KEY_DERIVATION_FAILED,
+            }
+        }
+        Err(_) => ELECRYPTO_ERROR_INVALID_INPUT,
+    }
+}
+
+/// Generate random bytes using CTR-DRBG
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_ctr_drbg_generate(
+    entropy: *const c_uchar,
+    entropy_len: c_uint,
+    nonce: *const c_uchar,
+    nonce_len: c_uint,
+    output: *mut c_uchar,
+    output_len: c_uint,
+) -> c_int {
+    if entropy.is_null() || nonce.is_null() || output.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let entropy_slice = slice::from_raw_parts(entropy, entropy_len as usize);
+    let nonce_slice = slice::from_raw_parts(nonce, nonce_len as usize);
+
+    match CtrDrbg::instantiate(entropy_slice, nonce_slice, None) {
+        Ok(mut drbg) => {
+            let mut out_vec = vec![0u8; output_len as usize];
+            match drbg.generate(&mut out_vec, None) {
+                Ok(()) => {
+                    ptr::copy_nonoverlapping(out_vec.as_ptr(), output, output_len as usize);
+                    ELECRYPTO_SUCCESS
+                }
+                Err(_) => ELECRYPTO_ERROR_KEY_DERIVATION_FAILED,
+            }
+        }
+        Err(_) => ELECRYPTO_ERROR_INVALID_INPUT,
+    }
+}
+
+// =============================================================================
+// Post-Quantum Cryptography Functions
+// =============================================================================
+
+/// Generate Kyber512 keypair
+///
+/// # Safety
+///
+/// - `public_key` must point to valid memory of at least 800 bytes
+/// - `secret_key` must point to valid memory of at least 1632 bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_kyber512_generate_keypair(
+    public_key: *mut c_uchar,
+    secret_key: *mut c_uchar,
+) -> c_int {
+    if public_key.is_null() || secret_key.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let (pk, sk) = kyber512_keypair();
+    ptr::copy_nonoverlapping(pk.as_ptr(), public_key, pk.len());
+    ptr::copy_nonoverlapping(sk.as_ptr(), secret_key, sk.len());
+    ELECRYPTO_SUCCESS
+}
+
+/// Kyber512 encapsulation
+///
+/// # Safety
+///
+/// - `public_key` must point to valid memory of 800 bytes
+/// - `ciphertext` must point to valid memory of at least 768 bytes
+/// - `shared_secret` must point to valid memory of at least 32 bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_kyber512_encapsulate(
+    public_key: *const c_uchar,
+    ciphertext: *mut c_uchar,
+    shared_secret: *mut c_uchar,
+) -> c_int {
+    if public_key.is_null() || ciphertext.is_null() || shared_secret.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let pk_slice = slice::from_raw_parts(public_key, 800);
+
+    match kyber512_encapsulate(pk_slice) {
+        Ok((ct, ss)) => {
+            ptr::copy_nonoverlapping(ct.as_ptr(), ciphertext, ct.len());
+            ptr::copy_nonoverlapping(ss.as_ptr(), shared_secret, ss.len());
+            ELECRYPTO_SUCCESS
+        }
+        Err(_) => ELECRYPTO_ERROR_ENCRYPTION_FAILED,
+    }
+}
+
+/// Kyber512 decapsulation
+///
+/// # Safety
+///
+/// - `ciphertext` must point to valid memory of 768 bytes
+/// - `secret_key` must point to valid memory of 1632 bytes
+/// - `shared_secret` must point to valid memory of at least 32 bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_kyber512_decapsulate(
+    ciphertext: *const c_uchar,
+    secret_key: *const c_uchar,
+    shared_secret: *mut c_uchar,
+) -> c_int {
+    if ciphertext.is_null() || secret_key.is_null() || shared_secret.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let ct_slice = slice::from_raw_parts(ciphertext, 768);
+    let sk_slice = slice::from_raw_parts(secret_key, 1632);
+
+    match kyber512_decapsulate(ct_slice, sk_slice) {
+        Ok(ss) => {
+            ptr::copy_nonoverlapping(ss.as_ptr(), shared_secret, ss.len());
+            ELECRYPTO_SUCCESS
+        }
+        Err(_) => ELECRYPTO_ERROR_DECRYPTION_FAILED,
+    }
+}
+
+/// Generate Dilithium2 keypair
+///
+/// # Safety
+///
+/// - `public_key` must point to valid memory of at least 1312 bytes
+/// - `secret_key` must point to valid memory of at least 2560 bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_dilithium2_generate_keypair(
+    public_key: *mut c_uchar,
+    secret_key: *mut c_uchar,
+) -> c_int {
+    if public_key.is_null() || secret_key.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let (pk, sk) = dilithium2_keypair();
+    ptr::copy_nonoverlapping(pk.as_ptr(), public_key, pk.len());
+    ptr::copy_nonoverlapping(sk.as_ptr(), secret_key, sk.len());
+    ELECRYPTO_SUCCESS
+}
+
+/// Sign with Dilithium2
+///
+/// # Safety
+///
+/// - `message` must point to valid memory of `message_len` bytes
+/// - `secret_key` must point to valid memory of 2560 bytes
+/// - `signature` must point to valid memory of at least 2420 bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_dilithium2_sign(
+    message: *const c_uchar,
+    message_len: c_uint,
+    secret_key: *const c_uchar,
+    signature: *mut c_uchar,
+) -> c_int {
+    if message.is_null() || secret_key.is_null() || signature.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let msg_slice = slice::from_raw_parts(message, message_len as usize);
+    let sk_slice = slice::from_raw_parts(secret_key, 2560);
+
+    match dilithium2_sign(msg_slice, sk_slice) {
+        Ok(sig) => {
+            ptr::copy_nonoverlapping(sig.as_ptr(), signature, sig.len());
+            sig.len() as c_int
+        }
+        Err(_) => ELECRYPTO_ERROR_SIGNING_FAILED,
+    }
+}
+
+/// Verify Dilithium2 signature
+///
+/// Returns 1 if valid, 0 if invalid, negative on error
+///
+/// # Safety
+///
+/// - `message` must point to valid memory of `message_len` bytes
+/// - `signature` must point to valid memory of `signature_len` bytes
+/// - `public_key` must point to valid memory of 1312 bytes
+#[no_mangle]
+pub unsafe extern "C" fn elecrypto_dilithium2_verify(
+    message: *const c_uchar,
+    message_len: c_uint,
+    signature: *const c_uchar,
+    signature_len: c_uint,
+    public_key: *const c_uchar,
+) -> c_int {
+    if message.is_null() || signature.is_null() || public_key.is_null() {
+        return ELECRYPTO_ERROR_INVALID_INPUT;
+    }
+
+    let msg_slice = slice::from_raw_parts(message, message_len as usize);
+    let sig_slice = slice::from_raw_parts(signature, signature_len as usize);
+    let pk_slice = slice::from_raw_parts(public_key, 1312);
+
+    match dilithium2_verify(msg_slice, sig_slice, pk_slice) {
+        Ok(true) => 1,
+        Ok(false) => 0,
+        Err(_) => ELECRYPTO_ERROR_VERIFICATION_FAILED,
     }
 }
 
